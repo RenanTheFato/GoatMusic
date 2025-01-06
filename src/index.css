@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('./fonts/outfit/Outfit-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.scroll-bar::-webkit-scrollbar{
+  width: 10px;
+}
+
+.scroll-bar::-webkit-scrollbar-track{
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.scroll-bar::-webkit-scrollbar-thumb{
+  background-color: #ffffff96;
+  border-radius: 999px;
+}
