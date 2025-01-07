@@ -1,6 +1,6 @@
 [
   {
-    "id": "your-music-id",
+    "id": "randomUUID",
     "music-name": "the-music-name",
     "music-author": "the-author-name",
     "music-duration": "the-music-duration",
