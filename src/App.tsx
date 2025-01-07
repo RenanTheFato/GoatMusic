@@ -1,4 +1,4 @@
-import { Music, Pause, Pencil, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff } from "lucide-react"
+import { Music, Pause, Pencil, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MiniWaves } from "./components/MiniWaves"
 import data from './data/user-data.json'
@@ -12,6 +12,7 @@ export default function App() {
   const [audioProgress, setAudioProgress] = useState(0)
   const [volumeProgress, setVolumeProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
+  const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -55,6 +56,14 @@ export default function App() {
     } else {
       setIsPlaying(true)
       setWaveVisible(true)
+    }
+  }
+
+  function toggleMusicCard(){
+    if (isMusicCardVisible) {
+      setIsMusicCardVisible(false)
+    } else {
+      setIsMusicCardVisible(true)
     }
   }
 
@@ -210,8 +219,8 @@ export default function App() {
         </div>
       </header>
 
-      <div className="w-full h-full flex flex-col p-2 select-none">
-        <div className="w-full h-full flex flex-col bg-gradient-to-b from-blue-400 to-65% to-stone-950 backdrop-blur-md rounded-md overflow-y-auto scroll-bar">
+      <div className="w-full h-full flex flex-row p-2 select-none space-x-4">
+        <div className="w-full h-full flex flex-col bg-gradient-to-b from-blue-400 to-65% to-stone-950 backdrop-blur-md rounded-md overflow-y-auto scroll-bar transform transition-all duration-300 ease-in">
           <div className="w-full flex flex-col p-4">
             <div className="w-full flex flex-row items-center">
               <span className="text-[3rem] font-outfit text-white font-extrabold">Your Musics</span>
@@ -264,6 +273,30 @@ export default function App() {
             ))}
           </div>
         </div>
+        <div className={`${isMusicCardVisible ? "visible" : "hidden"} w-[35vw] flex flex-col bg-carbon-black contrast-125 rounded-lg space-y-4 transform transition-all duration-300 ease-in`}> 
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-full flex flex-row items-center p-4">
+              <div className="flex flex-row space-x-4">
+                <span className="font-outfit text-white font-extrabold">Now Playing</span>
+                <MiniWaves isActive={true} />
+              </div>
+              <div 
+              className="flex flex-row items-center ml-auto cursor-pointer"
+              onClick={toggleMusicCard}
+              >
+                <X className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <div className="flex items-center">
+              <img src={currentSong["music-cover"]} className="w-80 h-80 max-w-80 max-h-80 hover:brightness-125" />
+            </div>
+          </div>
+
+          <div className="flex flex-col mx-4">
+            <span className="text-base font-bold md:text-xl text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
+            <span className="text-xs font-bold md:text-base text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
+          </div>
+        </div>
       </div>
 
       <div className={`transform transition-all duration-300 ease-in-out ${waveVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
@@ -283,13 +316,15 @@ export default function App() {
       />
 
       <footer className="w-full p-4 flex flex-row items-center justify-between bg-black border-t-2 select-none">
-        <div className="flex flex-row items-center mx-4 space-x-4">
+        <div 
+        className="flex flex-row items-center mx-4 space-x-4"
+        onClick={toggleMusicCard}>
           <img
             src={currentSong["music-cover"]}
             className="max-w-10 max-h-10 md:max-w-14 md:max-h-14 cursor-pointer"
             alt={currentSong["music-name"]}
           />
-          <div className="flex flex-col font-outfit">
+          <div className="flex flex-col font-outfit w-20 max-w-20">
             <span className="text-base md:text-lg text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
             <span className="text-xs md:text-sm text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
           </div>
