@@ -2,29 +2,29 @@ import { Pause, Play, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } fr
 import React, { useEffect, useRef } from 'react'
 
 type Song = {
-  id: string;
-  "music-name": string;
-  "music-author": string;
-  "music-cover": string;
-  "music-source": string;
-  "music-duration": string;
+  id: string,
+  "music-name": string,
+  "music-author": string,
+  "music-cover": string,
+  "music-source": string,
+  "music-duration": string,
 }
 
 type MobilePlayerOverlayProps = {
-  isVisible: boolean;
-  onClose: () => void;
-  currentSong: Song;
-  isPlaying: boolean;
-  audioProgress: number;
-  audioDuration: number;
-  volumeProgress: number;
-  handleMusicProgress: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleMusicVolume: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  togglePlayerState: () => void;
-  formatMusicTime: (duration: number) => string;
-  playNext: () => void;
-  playPrev: () => void;
-  analyser: AnalyserNode | null;
+  isVisible: boolean,
+  onClose: () => void,
+  currentSong: Song,
+  isPlaying: boolean,
+  audioProgress: number,
+  audioDuration: number,
+  volumeProgress: number,
+  handleMusicProgress: (e: React.ChangeEvent<HTMLInputElement>) => void,
+  handleMusicVolume: (e: React.ChangeEvent<HTMLInputElement>) => void,
+  togglePlayerState: () => void,
+  formatMusicTime: (duration: number) => string,
+  playNext: () => void,
+  playPrev: () => void,
+  analyser: AnalyserNode | null,
 }
 
 export default function MobilePlayerOverlay({ 
@@ -44,80 +44,80 @@ export default function MobilePlayerOverlay({
   analyser
 }: MobilePlayerOverlayProps) {
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const lastDataArrayRef = useRef<Uint8Array | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number>()
+  const lastDataArrayRef = useRef<Uint8Array | null>(null)
 
   const drawWaves = () => {
     if (analyser && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
 
-      if (!ctx) return;
+      if (!ctx) return
 
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyser.getByteFrequencyData(dataArray);
+      const bufferLength = analyser.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
+      analyser.getByteFrequencyData(dataArray)
 
       if (isPlaying) {
-        lastDataArrayRef.current = new Uint8Array(dataArray);
+        lastDataArrayRef.current = new Uint8Array(dataArray)
       }
 
-      const displayArray = isPlaying ? dataArray : (lastDataArrayRef.current || dataArray);
+      const displayArray = isPlaying ? dataArray : (lastDataArrayRef.current || dataArray)
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      const barWidth = canvas.width / bufferLength * 2;
-      let x = 0;
+      const barWidth = canvas.width / bufferLength * 2
+      let x = 0
 
       for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (displayArray[i] / 255) * canvas.height;
+        const barHeight = (displayArray[i] / 255) * canvas.height
 
-        const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)');
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)');
+        const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height)
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)')
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)')
 
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        ctx.fillStyle = gradient
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
 
-        x += barWidth + 1;
+        x += barWidth + 1
       }
 
-      animationRef.current = requestAnimationFrame(drawWaves);
+      animationRef.current = requestAnimationFrame(drawWaves)
     }
   };
 
   useEffect(() => {
     if (isVisible && isPlaying) {
-      drawWaves();
+      drawWaves()
     }
 
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        cancelAnimationFrame(animationRef.current)
       }
     };
-  }, [isVisible, isPlaying]);
+  }, [isVisible, isPlaying])
 
   useEffect(() => {
     const handleResize = () => {
       if (canvasRef.current) {
-        canvasRef.current.width = window.innerWidth;
-        canvasRef.current.height = 32;
+        canvasRef.current.width = window.innerWidth
+        canvasRef.current.height = 32
       }
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize)
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleResize)
     };
-  }, []);
+  }, [])
   
   return (
     <div className={`fixed inset-0 z-50 bg-carbon-black contrast-125 md:hidden transform transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
-      <div className={`w-full h-full flex flex-col p-4transform transition-all duration-500 delay-100 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-1/4 opacity-0'}`}>
+      <div className={`w-full h-full flex flex-col transform transition-all duration-500 delay-100 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-1/4 opacity-0'}`}>
         <div className="flex justify-between items-center p-4">
           <button 
             onClick={onClose}

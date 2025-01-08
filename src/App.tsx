@@ -1,8 +1,9 @@
 import { Music, Pause, Pencil, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MiniWaves } from "./components/MiniWaves"
-import data from './data/user-data.json'
 import MobilePlayerOverlay from "./components/MobilePlayer"
+import AddMusics from "./components/AddMusics"
+import data from './data/user-data.json'
 
 export default function App() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -14,6 +15,7 @@ export default function App() {
   const [volumeProgress, setVolumeProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
+  const [isAddMusicCardVisible, setIsAddMusicCardVisible] = useState(false)
   const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -66,6 +68,14 @@ export default function App() {
       setIsMusicCardVisible(false)
     } else {
       setIsMusicCardVisible(true)
+    }
+  }
+
+  function toggleAddMusicCard() {
+    if (isAddMusicCardVisible) {
+      setIsAddMusicCardVisible(false)
+    } else {
+      setIsAddMusicCardVisible(true)
     }
   }
 
@@ -206,6 +216,7 @@ export default function App() {
 
   return (
     <main className="w-full h-screen flex flex-col bg-black space-y-4">
+
       <MobilePlayerOverlay
         isVisible={isMobilePlayerVisible}
         onClose={() => setIsMobilePlayerVisible(false)}
@@ -221,6 +232,11 @@ export default function App() {
         playNext={playNext}
         playPrev={playPrev}
         analyser={analyserRef.current}
+      />
+
+      <AddMusics 
+        isVisible={isAddMusicCardVisible}
+        onClose={() => setIsAddMusicCardVisible(false)}
       />
 
       <header className="w-full flex flex-row items-center justify-between h-16 shadow-md shadow-carbon-black">
@@ -249,7 +265,8 @@ export default function App() {
 
                 <button
                   className="group ml-auto bg-black p-2 rounded-full bg-opacity-60 shadow-lg transition-all duration-300 ease-in-out hover:scale-105"
-                  aria-label="Add New Music">
+                  aria-label="Add New Music"
+                  onClick={toggleAddMusicCard}>
                   <Plus className="w-5 h-5 text-white transition-all duration-500 ease-in-out group-hover:rotate-180 group-hover:scale-105" />
                 </button>
 
@@ -280,7 +297,7 @@ export default function App() {
                     {currentSong.id === item.id && isPlaying ? (
                       <MiniWaves isActive={true} />
                     ) : (
-                      <span className="text-white font-outfit">{index + 1}</span>
+                      <span className={`${currentSong["id"] === item["id"] ? "text-blue-600 font-semibold" : "text-white"} font-outfit`}>{index + 1}</span>
                     )}
                   </div>
                   <div className="flex flex-row items-center space-x-2">
@@ -316,7 +333,7 @@ export default function App() {
             <div className="flex items-center">
               <img
                 src={currentSong["music-cover"]}
-                className={`md:w-60 md:h-60 lg:w-80 lg:h-80 max-w-80 max-h-80 hover:brightness-110 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-90'}`}
+                className={`md:w-60 md:h-60 lg:w-72 lg:h-72 max-w-80 max-h-80 hover:brightness-110 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-90'}`}
                 alt={currentSong["music-name"]}
               />
             </div>
