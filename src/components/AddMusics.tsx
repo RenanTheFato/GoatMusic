@@ -1,5 +1,8 @@
 import { AudioLines, Image, Music4, Trash, X } from "lucide-react"
 import { useRef, useState } from "react"
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from "react-hook-form"
+import { z } from 'zod'
 
 type AddMusicsProps = {
   isVisible: boolean,
@@ -101,6 +104,7 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
 
       if (validateAudioFile(file)) {
         setAudioMusic(file);
+        setValue('music-audio', file)
 
         const audioUrl = URL.createObjectURL(file)
         const audio = new Audio(audioUrl)
@@ -110,6 +114,8 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
 
           setAudioDuration(duration)
 
+          setValue('music-duration', duration)
+
           URL.revokeObjectURL(audioUrl)
         }
       } else {
@@ -118,6 +124,8 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
         }
         setAudioMusic(null)
         setAudioDuration("")
+        setValue('music-duration', '')
+        setValue('music-audio', null)
       }
     }
   }
@@ -130,9 +138,34 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
     setAudioMusic(null)
     setAudioError(null)
     setAudioDuration("")
+    setValue('music-duration', '')
+    setValue('music-audio', null)
     if (audioMusicRef.current) {
       audioMusicRef.current.value = ''
     }
+  }
+  const addMusicSchema = z.object({
+    "music-name": z.string().nonempty("Music name is required").max(255, "Music name must be less than 255 characters"),
+    "music-author": z.string().nonempty("Music author is required").max(255, "Music author must be less than 255 characters"),
+    "music-duration": z.string().nonempty("Music duration is required"),
+    "music-audio": z.any().refine(val => val !== null, "Music audio is required")
+  })
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<AddMusicSchema>({
+    resolver: zodResolver(addMusicSchema),
+    defaultValues: {
+      "music-audio": null
+    }
+  })
+
+  type AddMusicSchema = z.infer<typeof addMusicSchema>
+
+  function handleAddMusic(data: AddMusicSchema) {
+    console.log({
+      ...data,
+      coverFile: coverMusic,
+      audioFile: audioMusic
+    })
   }
 
   return (
@@ -167,24 +200,48 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
         </div>
 
         <div className="w-full flex flex-col p-4 space-y-4 md:w-1/2">
-          <form className="flex flex-col space-y-4">
+          <form className="flex flex-col space-y-4" onSubmit={handleSubmit(handleAddMusic)}>
             <div className="flex flex-col space-y-4">
-              <label className="font-outfit text-white">Music Name</label>
-              <input type="text" className="p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ring-white focus:ring-blue-500" />
+              <div className="flex flex-row items-center justify-between">
+                <label className="font-outfit text-white">Music Name</label>
+                {errors['music-name'] && (
+                  <p className="text-red-500 text-sm font-outfit">{errors['music-name'].message}</p>
+                )}
+              </div>
+              <input
+                type="text"
+                {...register('music-name')}
+                className={`p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ${errors['music-author'] ? 'ring-red-500' : 'ring-white focus:ring-blue-500'}`}
+              />
             </div>
 
             <div className="flex flex-col space-y-4">
-              <label className="font-outfit text-white">Music Author</label>
-              <input type="text" className="p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ring-white focus:ring-blue-500" />
+              <div className="flex flex-row items-center justify-between">
+                <label className="font-outfit text-white">Music Author</label>
+                {errors['music-author'] && (
+                  <p className="text-red-500 text-sm font-outfit">{errors['music-author'].message}</p>
+                )}
+              </div>
+              <input
+                type="text"
+                {...register('music-author')}
+                className={`p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ${errors['music-author'] ? 'ring-red-500' : 'ring-white focus:ring-blue-500'}`}
+              />
             </div>
 
             <div className="flex flex-col space-y-4">
-              <label className="font-outfit text-white">Music Duration</label>
+              <div className="flex flex-row items-center justify-between">
+                <label className="font-outfit text-white">Music Duration</label>
+                {errors['music-duration'] && (
+                  <p className="text-red-500 text-sm font-outfit">{errors['music-duration'].message}</p>
+                )}
+              </div>
               <input
                 disabled
                 type="text"
                 value={audioDuration}
-                className="p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ring-white focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-white/10"
+                {...register('music-duration')}
+                className={`p-2 rounded-md outline-none bg-transparent transition-all duration-200 ease-in text-white ring-1 ${errors['music-duration'] ? 'ring-red-500' : 'ring-white'} disabled:cursor-not-allowed disabled:bg-white/10`}
               />
             </div>
 
@@ -235,9 +292,11 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
                 {audioError && (
                   <p className="text-red-500 text-sm font-outfit">{audioError}</p>
                 )}
+                {errors['music-audio'] && (
+                  <p className="text-red-500 text-sm font-outfit">{errors['music-audio']?.message?.toString()}</p>
+                )}
               </div>
-              <div className={`rounded-md outline-none bg-transparent transition-all duration-300 ease-in-out text-white ring-1 ${audioError ? 'ring-red-500' : 'ring-white hover:ring-blue-500'}`}>
-                <input
+              <div className={`rounded-md outline-none bg-transparent transition-all duration-300 ease-in-out text-white ring-1 ${audioError || errors['music-audio'] ? 'ring-red-500' : 'ring-white hover:ring-blue-500'}`}>                <input
                   type="file"
                   accept="audio/mpeg,audio/ogg,audio/wav"
                   onChange={handleChangeMusicAudio}
