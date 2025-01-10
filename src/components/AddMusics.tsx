@@ -3,6 +3,7 @@ import { useRef, useState } from "react"
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from "react-hook-form"
 import { z } from 'zod'
+import axios from "axios"
 
 type AddMusicsProps = {
   isVisible: boolean,
@@ -43,6 +44,7 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
     }
 
     const maxSize = 5 * 1024 * 1024
+
     if (file.size > maxSize) {
       setCoverError('File size must be less than 5MB')
       showCoverNotification('File size must be less than 5MB')
@@ -131,7 +133,7 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
   }
 
   function handleChooseMusicAudio() {
-    audioMusicRef.current?.click();
+    audioMusicRef.current?.click()
   }
 
   function handleRemoveMusicAudio() {
@@ -144,6 +146,7 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
       audioMusicRef.current.value = ''
     }
   }
+
   const addMusicSchema = z.object({
     "music-name": z.string().nonempty("Music name is required").max(255, "Music name must be less than 255 characters"),
     "music-author": z.string().nonempty("Music author is required").max(255, "Music author must be less than 255 characters"),
@@ -160,7 +163,37 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
 
   type AddMusicSchema = z.infer<typeof addMusicSchema>
 
-  function handleAddMusic(data: AddMusicSchema) {
+  async function handleAddMusic(data: AddMusicSchema) {
+
+    try {
+      const formData = new FormData();
+      formData.append('music-name', data['music-name'])
+      formData.append('music-author', data['music-author'])
+      formData.append('music-duration', data['music-duration'])
+
+      if (coverMusic) {
+        formData.append('cover', coverMusic)
+      }
+
+      if (audioMusic) {
+        formData.append('audio', audioMusic)
+      }
+
+      const response = await axios.post('http://localhost:3333/api/upload-music', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 200) {
+        handleRemoveMusicCover()
+        handleRemoveMusicAudio()
+        onClose()
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('Error uploading music:', error)
+    }
     console.log({
       ...data,
       coverFile: coverMusic,
@@ -297,12 +330,12 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
                 )}
               </div>
               <div className={`rounded-md outline-none bg-transparent transition-all duration-300 ease-in-out text-white ring-1 ${audioError || errors['music-audio'] ? 'ring-red-500' : 'ring-white hover:ring-blue-500'}`}>                <input
-                  type="file"
-                  accept="audio/mpeg,audio/ogg,audio/wav"
-                  onChange={handleChangeMusicAudio}
-                  ref={audioMusicRef}
-                  className="hidden"
-                />
+                type="file"
+                accept="audio/mpeg,audio/ogg,audio/wav"
+                onChange={handleChangeMusicAudio}
+                ref={audioMusicRef}
+                className="hidden"
+              />
                 {audioMusic === null ? (
                   <button
                     type="button"

@@ -3,20 +3,47 @@ import { useState, useEffect, useRef } from "react"
 import { MiniWaves } from "./components/MiniWaves"
 import MobilePlayerOverlay from "./components/MobilePlayer"
 import AddMusics from "./components/AddMusics"
-import data from './data/user-data.json'
+import axios from 'axios'
+
+interface Musics {
+  id: string,
+  name: string,
+  author: string,
+  duration: string,
+  coverPath: string,
+  audioPath: string,
+}
+
+interface TransformedMusic {
+  id: string,
+  "music-name": string,
+  "music-author": string,
+  "music-duration": string,
+  "music-cover": string,
+  "music-source": string,
+}
 
 export default function App() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioInitialized, setAudioInitialized] = useState(false)
   const [isRandom, setIsRandom] = useState(false)
   const [waveVisible, setWaveVisible] = useState(true)
-  const [currentSong, setCurrentSong] = useState(data[0])
+  const [musicData, setMusicData] = useState<TransformedMusic[]>([])
+  const [currentSong, setCurrentSong] = useState<TransformedMusic>({
+    id: '',
+    "music-name": '',
+    "music-author": '',
+    "music-duration": '',
+    "music-cover": '',
+    "music-source": ''
+  })
   const [audioProgress, setAudioProgress] = useState(0)
   const [volumeProgress, setVolumeProgress] = useState(0)
   const [audioDuration, setAudioDuration] = useState(0)
   const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
   const [isAddMusicCardVisible, setIsAddMusicCardVisible] = useState(false)
-  const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false);
+  const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -25,6 +52,34 @@ export default function App() {
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
   const animateRef = useRef<number>()
   const lastDataArrayRef = useRef<Uint8Array | null>(null)
+
+  useEffect(() => {
+    const fetchMusicData = async () => {
+      try {
+        setIsLoading(true)
+        const response = await axios.get('http://localhost:3333/api/musics')
+        if (response.status === 200) {
+          const transformedData = response.data.map((music: Musics) => ({
+            id: music.id,
+            "music-name": music.name,
+            "music-author": music.author,
+            "music-duration": music.duration,
+            "music-cover": `http://localhost:3333${music.coverPath}`,
+            "music-source": `http://localhost:3333${music.audioPath}`
+          }))
+          setMusicData(transformedData)
+          if (transformedData.length > 0) {
+            setCurrentSong(transformedData[0])
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching music data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchMusicData()
+  }, [])
 
   function handleMusicProgress(e: any) {
     if (!audioRef.current) return
@@ -64,41 +119,31 @@ export default function App() {
   }
 
   function toggleMusicCard() {
-    if (isMusicCardVisible) {
-      setIsMusicCardVisible(false)
-    } else {
-      setIsMusicCardVisible(true)
-    }
+    setIsMusicCardVisible(!isMusicCardVisible)
   }
 
   function toggleAddMusicCard() {
-    if (isAddMusicCardVisible) {
-      setIsAddMusicCardVisible(false)
-    } else {
-      setIsAddMusicCardVisible(true)
-    }
+    setIsAddMusicCardVisible(!isAddMusicCardVisible)
   }
 
   function handleRandom() {
-    if (isRandom) {
-      setIsRandom(false)
-    } else (
-      setIsRandom(true)
-    )
+    setIsRandom(!isRandom)
   }
 
   function playNext() {
-    const currentIndex = data.findIndex(song => song.id === currentSong.id)
+    if (musicData.length === 0) return
+
+    const currentIndex = musicData.findIndex(song => song.id === currentSong.id)
 
     if (isRandom) {
       let randomIndex
       do {
-        randomIndex = Math.floor(Math.random() * data.length)
+        randomIndex = Math.floor(Math.random() * musicData.length)
       } while (randomIndex === currentIndex)
-      setCurrentSong(data[randomIndex])
+      setCurrentSong(musicData[randomIndex])
     } else {
-      const nextIndex = currentIndex === data.length - 1 ? 0 : currentIndex + 1
-      setCurrentSong(data[nextIndex])
+      const nextIndex = currentIndex === musicData.length - 1 ? 0 : currentIndex + 1
+      setCurrentSong(musicData[nextIndex])
     }
 
     setIsPlaying(true)
@@ -106,9 +151,11 @@ export default function App() {
   }
 
   function playPrev() {
-    const currentIndex = data.findIndex(song => song.id === currentSong.id)
-    const prevIndex = currentIndex === 0 ? data.length - 1 : currentIndex - 1
-    setCurrentSong(data[prevIndex])
+    if (musicData.length === 0) return
+
+    const currentIndex = musicData.findIndex(song => song.id === currentSong.id)
+    const prevIndex = currentIndex === 0 ? musicData.length - 1 : currentIndex - 1
+    setCurrentSong(musicData[prevIndex])
     setIsPlaying(true)
     setWaveVisible(true)
   }
@@ -166,19 +213,31 @@ export default function App() {
     }
   }
 
+  
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.crossOrigin = 'anonymous';
+      audioRef.current.src = currentSong["music-source"]
+      if (isPlaying) {
+        audioRef.current.play()
+      }
+    }
+  }, [currentSong])
+  
   useEffect(() => {
     audioRef.current?.addEventListener("timeupdate", handleMusicTime)
 
     return () => {
       audioRef.current?.removeEventListener("timeupdate", handleMusicTime)
     }
-  })
+  }, [])
 
   useEffect(() => {
     if (isPlaying) {
       initializeAudio()
       audioRef.current?.play()
       songWaves()
+
     } else {
       audioRef.current?.pause()
       if (animateRef.current) {
@@ -187,14 +246,6 @@ export default function App() {
     }
   }, [isPlaying])
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.src = currentSong["music-source"]
-      if (isPlaying) {
-        audioRef.current.play()
-      }
-    }
-  }, [currentSong])
 
   useEffect(() => {
     return () => {
@@ -205,14 +256,21 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const defaultVolume = 0.5;
-    setVolumeProgress(defaultVolume);
+    const defaultVolume = 0.5
+    setVolumeProgress(defaultVolume)
 
     if (audioRef.current) {
-      audioRef.current.volume = defaultVolume;
+      audioRef.current.volume = defaultVolume
     }
-  }, []);
+  }, [])
 
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-black">
+        <span className="text-white font-outfit">Loading...</span>
+      </div>
+    )
+  }
 
   return (
     <main className="w-full h-screen flex flex-col bg-black space-y-4">
@@ -234,7 +292,7 @@ export default function App() {
         analyser={analyserRef.current}
       />
 
-      <AddMusics 
+      <AddMusics
         isVisible={isAddMusicCardVisible}
         onClose={() => setIsAddMusicCardVisible(false)}
       />
@@ -282,7 +340,7 @@ export default function App() {
           </div>
 
           <div className="w-full h-60 bg-black bg-opacity-10 space-y-1 p-2">
-            {data.map((item, index) => (
+            {musicData.map((item, index) => (
               <div
                 key={item.id}
                 className="w-full h-14 flex flex-row items-center p-4 bg-transparent rounded-sm cursor-pointer hover:bg-white hover:bg-opacity-10"
