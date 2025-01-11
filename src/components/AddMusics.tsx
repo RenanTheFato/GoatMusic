@@ -5,12 +5,22 @@ import { useForm } from "react-hook-form"
 import { z } from 'zod'
 import axios from "axios"
 
-type AddMusicsProps = {
-  isVisible: boolean,
-  onClose: () => void
+interface TransformedMusic {
+  id: string;
+  "music-name": string;
+  "music-author": string;
+  "music-duration": string;
+  "music-cover": string;
+  "music-source": string;
 }
 
-export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
+interface AddMusicsProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onMusicAdded: (newMusic: TransformedMusic) => void;
+}
+
+export default function AddMusics({ isVisible, onClose, onMusicAdded }: AddMusicsProps) {
   const coverMusicRef = useRef<HTMLInputElement | null>(null)
   const audioMusicRef = useRef<HTMLInputElement | null>(null)
 
@@ -164,41 +174,36 @@ export default function AddMusics({ isVisible, onClose }: AddMusicsProps) {
   type AddMusicSchema = z.infer<typeof addMusicSchema>
 
   async function handleAddMusic(data: AddMusicSchema) {
-
     try {
       const formData = new FormData();
-      formData.append('music-name', data['music-name'])
-      formData.append('music-author', data['music-author'])
-      formData.append('music-duration', data['music-duration'])
-
+      formData.append('music-name', data['music-name']);
+      formData.append('music-author', data['music-author']);
+      formData.append('music-duration', data['music-duration']);
+  
       if (coverMusic) {
-        formData.append('cover', coverMusic)
+        formData.append('cover', coverMusic);
       }
-
+  
       if (audioMusic) {
-        formData.append('audio', audioMusic)
+        formData.append('audio', audioMusic);
       }
-
+  
       const response = await axios.post('http://localhost:3333/api/upload-music', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-
+  
       if (response.status === 200) {
-        handleRemoveMusicCover()
-        handleRemoveMusicAudio()
-        onClose()
-        window.location.reload()
+        onMusicAdded(response.data);
+  
+        handleRemoveMusicCover();
+        handleRemoveMusicAudio();
+        onClose();
       }
     } catch (error) {
-      console.error('Error uploading music:', error)
+      console.error('Error uploading music:', error);
     }
-    console.log({
-      ...data,
-      coverFile: coverMusic,
-      audioFile: audioMusic
-    })
   }
 
   return (

@@ -53,43 +53,61 @@ export default function App() {
   const animateRef = useRef<number>()
   const lastDataArrayRef = useRef<Uint8Array | null>(null)
 
-  useEffect(() => {
-    const fetchMusicData = async () => {
-      try {
-        setIsLoading(true)
-        const response = await axios.get('http://localhost:3333/api/musics')
-        if (response.status === 200) {
-          const transformedData = response.data.map((music: Musics) => ({
-            id: music.id,
-            "music-name": music.name,
-            "music-author": music.author,
-            "music-duration": music.duration,
-            "music-cover": `http://localhost:3333${music.coverPath}`,
-            "music-source": `http://localhost:3333${music.audioPath}`
-          }))
-          setMusicData(transformedData)
-          if (transformedData.length > 0) {
-            setCurrentSong(transformedData[0])
-          }
+  const fetchMusicData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await axios.get('http://localhost:3333/api/musics')
+      if (response.status === 200) {
+        const transformedData = response.data.map((music: Musics) => ({
+          id: music.id,
+          "music-name": music.name,
+          "music-author": music.author,
+          "music-duration": music.duration,
+          "music-cover": `http://localhost:3333${music.coverPath}`,
+          "music-source": `http://localhost:3333${music.audioPath}`
+        }))
+        setMusicData(transformedData)
+        if (transformedData.length > 0 && !currentSong.id) {
+          setCurrentSong(transformedData[0])
         }
-      } catch (error) {
-        console.error('Error fetching music data:', error)
-      } finally {
-        setIsLoading(false)
       }
+    } catch (error) {
+      console.error('Error fetching music data:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchMusicData()
   }, [])
 
-  function handleMusicProgress(e: any) {
+  function handleMusicAdded() {
+    fetchMusicData()
+  }
+
+  function handleMusicProgress(e: React.ChangeEvent<HTMLInputElement>) {
     if (!audioRef.current) return
-    audioRef.current.currentTime = e.target.value
-    setAudioProgress(e.target.value)
+    const newTime = parseFloat(e.target.value)
+    if (!isNaN(newTime)) {
+      audioRef.current.currentTime = newTime
+      setAudioProgress(newTime)
+    }
   }
 
   function handleMusicTime() {
-    setAudioProgress(Number(audioRef.current?.currentTime))
-    setAudioDuration(Number(audioRef.current?.duration))
+    if (!audioRef.current) return
+
+    const currentTime = audioRef.current.currentTime
+    const duration = audioRef.current.duration
+
+    if (!isNaN(currentTime)) {
+      setAudioProgress(currentTime)
+    }
+
+    if (!isNaN(duration)) {
+      setAudioDuration(duration)
+    }
   }
 
   function handleMusicVolume(e: any) {
@@ -117,6 +135,12 @@ export default function App() {
       setWaveVisible(true)
     }
   }
+
+  function resetAudioState() {
+    setAudioProgress(0)
+    setAudioDuration(0)
+  }
+
 
   function toggleMusicCard() {
     setIsMusicCardVisible(!isMusicCardVisible)
@@ -146,6 +170,7 @@ export default function App() {
       setCurrentSong(musicData[nextIndex])
     }
 
+    resetAudioState()
     setIsPlaying(true)
     setWaveVisible(true)
   }
@@ -156,6 +181,8 @@ export default function App() {
     const currentIndex = musicData.findIndex(song => song.id === currentSong.id)
     const prevIndex = currentIndex === 0 ? musicData.length - 1 : currentIndex - 1
     setCurrentSong(musicData[prevIndex])
+
+    resetAudioState()
     setIsPlaying(true)
     setWaveVisible(true)
   }
@@ -213,22 +240,46 @@ export default function App() {
     }
   }
 
-  
+
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.crossOrigin = 'anonymous';
+      audioRef.current.crossOrigin = 'anonymous'
       audioRef.current.src = currentSong["music-source"]
+
+      const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+          setAudioDuration(audioRef.current.duration)
+          setAudioProgress(0)
+        }
+      }
+
+      audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata)
+
       if (isPlaying) {
-        audioRef.current.play()
+        audioRef.current.play().catch(error => {
+          console.error('Error playing audio:', error)
+          setIsPlaying(false)
+        })
+      }
+
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        }
       }
     }
   }, [currentSong])
-  
+
   useEffect(() => {
-    audioRef.current?.addEventListener("timeupdate", handleMusicTime)
+    const audio = audioRef.current
+    if (!audio) return
+
+    audio.addEventListener("timeupdate", handleMusicTime)
+    audio.addEventListener("loadedmetadata", handleMusicTime)
 
     return () => {
-      audioRef.current?.removeEventListener("timeupdate", handleMusicTime)
+      audio.removeEventListener("timeupdate", handleMusicTime)
+      audio.removeEventListener("loadedmetadata", handleMusicTime)
     }
   }, [])
 
@@ -295,6 +346,7 @@ export default function App() {
       <AddMusics
         isVisible={isAddMusicCardVisible}
         onClose={() => setIsAddMusicCardVisible(false)}
+        onMusicAdded={handleMusicAdded}
       />
 
       <header className="w-full flex flex-row items-center justify-between h-16 shadow-md shadow-carbon-black">
@@ -412,11 +464,13 @@ export default function App() {
           height={32}
         />
       </div>
-
       <audio
         ref={audioRef}
-        onEnded={() => {
-          playNext()
+        onEnded={playNext}
+        onTimeUpdate={() => {
+          if (audioRef.current) {
+            setAudioProgress(audioRef.current.currentTime)
+          }
         }}
       />
 
@@ -479,7 +533,7 @@ export default function App() {
               type="range"
               min={0}
               max={audioDuration || 0}
-              value={audioProgress}
+              value={audioProgress || 0}
               onChange={handleMusicProgress}
               className="w-72 h-1 transition-all duration-300 ease-in-out accent-white outline-none border-none hover:accent-blue-400 hover:h-4"
             />
