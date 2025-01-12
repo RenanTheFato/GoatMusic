@@ -1,33 +1,26 @@
 import { Music, Pause, Pencil, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
-import { MiniWaves } from "./components/MiniWaves"
+import { TransformedMusic, Musics } from "./@types/types"
 import MobilePlayerOverlay from "./components/MobilePlayer"
+import { MiniWaves } from "./components/MiniWaves"
 import AddMusics from "./components/AddMusics"
 import axios from 'axios'
 
-interface Musics {
-  id: string,
-  name: string,
-  author: string,
-  duration: string,
-  coverPath: string,
-  audioPath: string,
-}
-
-interface TransformedMusic {
-  id: string,
-  "music-name": string,
-  "music-author": string,
-  "music-duration": string,
-  "music-cover": string,
-  "music-source": string,
-}
 
 export default function App() {
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isAddMusicCardVisible, setIsAddMusicCardVisible] = useState(false)
+  const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false)
+  const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
   const [audioInitialized, setAudioInitialized] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const [isRandom, setIsRandom] = useState(false)
+
+  const [volumeProgress, setVolumeProgress] = useState(0)
+  const [audioProgress, setAudioProgress] = useState(0)
+  const [audioDuration, setAudioDuration] = useState(0)
+
   const [waveVisible, setWaveVisible] = useState(true)
+
   const [musicData, setMusicData] = useState<TransformedMusic[]>([])
   const [currentSong, setCurrentSong] = useState<TransformedMusic>({
     id: '',
@@ -37,44 +30,86 @@ export default function App() {
     "music-cover": '',
     "music-source": ''
   })
-  const [audioProgress, setAudioProgress] = useState(0)
-  const [volumeProgress, setVolumeProgress] = useState(0)
-  const [audioDuration, setAudioDuration] = useState(0)
-  const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
-  const [isAddMusicCardVisible, setIsAddMusicCardVisible] = useState(false)
-  const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-  const animateRef = useRef<number>()
+  const audioContextRef = useRef<AudioContext | null>(null)
   const lastDataArrayRef = useRef<Uint8Array | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const animateRef = useRef<number>()
 
-  const fetchMusicData = async () => {
+  function songWaves() {
+    if (analyserRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext("2d")
+
+      if (!ctx) return
+
+      const bufferLength = analyserRef.current.frequencyBinCount
+      const dataArray = new Uint8Array(bufferLength)
+      analyserRef.current.getByteFrequencyData(dataArray)
+
+      if (isPlaying) {
+        lastDataArrayRef.current = new Uint8Array(dataArray)
+      }
+
+      const displayArray = isPlaying ? dataArray : (lastDataArrayRef.current || dataArray)
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      const barWidth = canvas.width / bufferLength * 2
+      let x = 0
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (displayArray[i] / 255) * canvas.height
+
+        const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height)
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)')
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)')
+
+        ctx.fillStyle = gradient
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
+
+        x += barWidth + 1
+      }
+
+      animateRef.current = requestAnimationFrame(songWaves)
+    }
+  }
+
+  async function fetchMusicData() {
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
     try {
-      setIsLoading(true)
-      const response = await axios.get('http://localhost:3333/api/musics')
+      const response = await axios.get(`${apiUrl}/api/musics`)
       if (response.status === 200) {
         const transformedData = response.data.map((music: Musics) => ({
           id: music.id,
           "music-name": music.name,
           "music-author": music.author,
           "music-duration": music.duration,
-          "music-cover": `http://localhost:3333${music.coverPath}`,
-          "music-source": `http://localhost:3333${music.audioPath}`
+          "music-cover": `${apiUrl}${music.coverPath}`,
+          "music-source": `${apiUrl}${music.audioPath}`
         }))
+
         setMusicData(transformedData)
-        if (transformedData.length > 0 && !currentSong.id) {
+
+        if (!currentSong.id && transformedData.length > 0) {
           setCurrentSong(transformedData[0])
         }
       }
     } catch (error) {
       console.error('Error fetching music data:', error)
-    } finally {
-      setIsLoading(false)
+    }
+  }
+
+  async function handleMusicAdded() {
+    const isCurrentlyPlaying = isPlaying
+    await fetchMusicData()
+
+    if (isCurrentlyPlaying) {
+      setIsPlaying(true)
+      setWaveVisible(true)
     }
   }
 
@@ -82,8 +117,14 @@ export default function App() {
     fetchMusicData()
   }, [])
 
-  function handleMusicAdded() {
-    fetchMusicData()
+  function formatMusicTime(duration: number) {
+    if (!duration || isNaN(duration)) {
+      return "0:00";
+    }
+    const minutes = Math.floor(duration / 60)
+    const seconds = Math.floor(duration % 60)
+    const formattedSeconds = seconds.toString().padStart(2, '0')
+    return `${minutes}:${formattedSeconds}`
   }
 
   function handleMusicProgress(e: React.ChangeEvent<HTMLInputElement>) {
@@ -116,16 +157,6 @@ export default function App() {
     setVolumeProgress(e.target.value)
   }
 
-  function formatMusicTime(duration: number) {
-    if (!duration || isNaN(duration)) {
-      return "0:00";
-    }
-    const minutes = Math.floor(duration / 60)
-    const seconds = Math.floor(duration % 60)
-    const formattedSeconds = seconds.toString().padStart(2, '0')
-    return `${minutes}:${formattedSeconds}`
-  }
-
   function togglePlayerState() {
     if (isPlaying) {
       setIsPlaying(false)
@@ -140,7 +171,6 @@ export default function App() {
     setAudioProgress(0)
     setAudioDuration(0)
   }
-
 
   function toggleMusicCard() {
     setIsMusicCardVisible(!isMusicCardVisible)
@@ -187,46 +217,7 @@ export default function App() {
     setWaveVisible(true)
   }
 
-  function songWaves() {
-    if (analyserRef.current && canvasRef.current) {
-      const canvas = canvasRef.current
-      const ctx = canvas.getContext("2d")
-
-      if (!ctx) return
-
-      const bufferLength = analyserRef.current.frequencyBinCount
-      const dataArray = new Uint8Array(bufferLength)
-      analyserRef.current.getByteFrequencyData(dataArray)
-
-      if (isPlaying) {
-        lastDataArrayRef.current = new Uint8Array(dataArray)
-      }
-
-      const displayArray = isPlaying ? dataArray : (lastDataArrayRef.current || dataArray)
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      const barWidth = canvas.width / bufferLength * 2
-      let x = 0
-
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (displayArray[i] / 255) * canvas.height
-
-        const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height)
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)')
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)')
-
-        ctx.fillStyle = gradient
-        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
-
-        x += barWidth + 1
-      }
-
-      animateRef.current = requestAnimationFrame(songWaves)
-    }
-  }
-
-  const initializeAudio = () => {
+  function initializeAudio() {
     if (!audioInitialized && audioRef.current) {
       audioContextRef.current = new AudioContext()
       analyserRef.current = audioContextRef.current.createAnalyser()
@@ -239,7 +230,6 @@ export default function App() {
       setAudioInitialized(true)
     }
   }
-
 
   useEffect(() => {
     if (audioRef.current) {
@@ -297,7 +287,6 @@ export default function App() {
     }
   }, [isPlaying])
 
-
   useEffect(() => {
     return () => {
       if (animateRef.current) {
@@ -314,14 +303,6 @@ export default function App() {
       audioRef.current.volume = defaultVolume
     }
   }, [])
-
-  if (isLoading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-black">
-        <span className="text-white font-outfit">Loading...</span>
-      </div>
-    )
-  }
 
   return (
     <main className="w-full h-screen flex flex-col bg-black space-y-4">
@@ -490,8 +471,8 @@ export default function App() {
             alt={currentSong["music-name"]}
           />
           <div className="flex flex-col font-outfit w-20 max-w-20">
-            <span className="text-base md:text-lg text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
-            <span className="text-xs md:text-sm text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
+            <span className="text-base whitespace-nowrap md:text-lg text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
+            <span className="text-xs whitespace-nowrap md:text-sm text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
           </div>
         </div>
 

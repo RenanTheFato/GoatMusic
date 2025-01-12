@@ -1,18 +1,10 @@
 import { AudioLines, Image, Music4, Trash, X } from "lucide-react"
 import { useRef, useState } from "react"
+import { TransformedMusic } from "../@types/types"
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from "react-hook-form"
 import { z } from 'zod'
 import axios from "axios"
-
-interface TransformedMusic {
-  id: string;
-  "music-name": string;
-  "music-author": string;
-  "music-duration": string;
-  "music-cover": string;
-  "music-source": string;
-}
 
 interface AddMusicsProps {
   isVisible: boolean;
@@ -174,38 +166,49 @@ export default function AddMusics({ isVisible, onClose, onMusicAdded }: AddMusic
   type AddMusicSchema = z.infer<typeof addMusicSchema>
 
   async function handleAddMusic(data: AddMusicSchema) {
+    const apiUrl = import.meta.env.VITE_API_BASE_URL
+
     try {
       const formData = new FormData();
-      formData.append('music-name', data['music-name']);
-      formData.append('music-author', data['music-author']);
-      formData.append('music-duration', data['music-duration']);
+      formData.append('music-name', data['music-name'])
+      formData.append('music-author', data['music-author'])
+      formData.append('music-duration', data['music-duration'])
   
       if (coverMusic) {
-        formData.append('cover', coverMusic);
+        formData.append('cover', coverMusic)
       }
   
       if (audioMusic) {
-        formData.append('audio', audioMusic);
+        formData.append('audio', audioMusic)
       }
   
-      const response = await axios.post('http://localhost:3333/api/upload-music', formData, {
+      const response = await axios.post(`${apiUrl}/api/upload-music`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      });
+      })
   
       if (response.status === 200) {
-        onMusicAdded(response.data);
+        const transformedMusic: TransformedMusic = {
+          id: response.data.id,
+          "music-name": response.data.name,
+          "music-author": response.data.author,
+          "music-duration": response.data.duration,
+          "music-cover": `${apiUrl}${response.data.coverPath}`,
+          "music-source": `${apiUrl}${response.data.audioPath}`
+        }
   
-        handleRemoveMusicCover();
-        handleRemoveMusicAudio();
-        onClose();
+        onMusicAdded(transformedMusic)
+  
+        handleRemoveMusicCover()
+        handleRemoveMusicAudio()
+        onClose()
       }
     } catch (error) {
-      console.error('Error uploading music:', error);
+      console.error('Error uploading music:', error)
     }
   }
-
+  
   return (
     <div className={`fixed inset-0 z-50 bg-carbon-black contrast-125 transform transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
       {coverNotification && (
