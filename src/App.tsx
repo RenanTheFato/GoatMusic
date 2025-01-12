@@ -1,4 +1,4 @@
-import { Music, Pause, Pencil, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } from "lucide-react"
+import { Music, Pause, Play, Plus, Search, Shuffle, StepBack, StepForward, Volume1, Volume2, VolumeOff, X } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { TransformedMusic, Musics } from "./@types/types"
 import MobilePlayerOverlay from "./components/MobilePlayer"
@@ -6,12 +6,12 @@ import { MiniWaves } from "./components/MiniWaves"
 import AddMusics from "./components/AddMusics"
 import axios from 'axios'
 
-
 export default function App() {
   const [isAddMusicCardVisible, setIsAddMusicCardVisible] = useState(false)
   const [isMobilePlayerVisible, setIsMobilePlayerVisible] = useState(false)
   const [isMusicCardVisible, setIsMusicCardVisible] = useState(false)
   const [audioInitialized, setAudioInitialized] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const [isPlaying, setIsPlaying] = useState(false)
   const [isRandom, setIsRandom] = useState(false)
 
@@ -231,6 +231,12 @@ export default function App() {
     }
   }
 
+
+  const filteredMusicData = musicData.filter((music) =>
+    music["music-name"].toLowerCase().includes(searchQuery.toLowerCase()) ||
+    music["music-author"].toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.crossOrigin = 'anonymous'
@@ -305,7 +311,7 @@ export default function App() {
   }, [])
 
   return (
-    <main className="w-full h-screen flex flex-col bg-black space-y-4">
+    <div>
 
       <MobilePlayerOverlay
         isVisible={isMobilePlayerVisible}
@@ -330,221 +336,222 @@ export default function App() {
         onMusicAdded={handleMusicAdded}
       />
 
-      <header className="w-full flex flex-row items-center justify-between h-16 shadow-md shadow-carbon-black">
-        <div className="flex items-center justify-center m-4">
-          <Music className="w-10 h-10 text-white" />
-        </div>
-
-        <div className="group w-auto flex items-center justify-center bg-carbon-black rounded-2xl space-x-4 pl-4 mr-4 transition-all duration-300 focus-within:ring-1 focus-within:ring-white hover:brightness-125">
-          <Search className="text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white group-focus-within:text-white" />
-          <input
-            type="search"
-            aria-label="Search Music"
-            placeholder="What to listen to today?"
-            className="bg-carbon-black w-60 p-2 text-white rounded-r-2xl outline-none placeholder:text-neutral-400 font-outfit"
-          />
-        </div>
-      </header>
+      <main className="w-full h-screen flex flex-col bg-black space-y-4 relative">
 
 
-      <div className="w-full h-full flex flex-row p-2 select-none space-x-4">
-        <div className={`w-full h-full flex flex-col bg-gradient-to-b from-blue-400 to-65% to-stone-950 backdrop-blur-md rounded-md overflow-y-auto scroll-bar transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'md:w-[80vw]' : 'w-full'}`}>
-          <div className="w-full flex flex-col p-4">
-            <div className="w-full flex flex-row items-center">
-              <span className="text-[3rem] font-outfit text-white font-extrabold">Your Musics</span>
-              <div className="flex flex-row items-center ml-auto space-x-4">
-
-                <button
-                  className="group ml-auto bg-black p-2 rounded-full bg-opacity-60 shadow-lg transition-all duration-300 ease-in-out hover:scale-105"
-                  aria-label="Add New Music"
-                  onClick={toggleAddMusicCard}>
-                  <Plus className="w-5 h-5 text-white transition-all duration-500 ease-in-out group-hover:rotate-180 group-hover:scale-105" />
-                </button>
-
-                <button
-                  className="ml-auto bg-black p-2 rounded-full bg-opacity-60 shadow-lg"
-                  aria-label="Edit Your Musics">
-                  <Pencil className="w-5 h-5 text-white" />
-                </button>
-
-              </div>
-            </div>
-            <span className="text-lg font-outfit px-1 text-neutral-200">Here's your music library</span>
+        <header className="w-full flex flex-row items-center justify-between h-16 shadow-md shadow-carbon-black">
+          <div className="flex flex-row space-x-4 items-center justify-center m-4">
+            <Music className="w-10 h-10 text-white" />
+            <span className="text-white font-outfit text-3xl font-extrabold">G O A T</span>
           </div>
 
-          <div className="w-full h-60 bg-black bg-opacity-10 space-y-1 p-2">
-            {musicData.map((item, index) => (
-              <div
-                key={item.id}
-                className="w-full h-14 flex flex-row items-center p-4 bg-transparent rounded-sm cursor-pointer hover:bg-white hover:bg-opacity-10"
-                onClick={() => {
-                  setCurrentSong(item)
-                  setIsPlaying(true)
-                  setWaveVisible(true)
-                }}
-              >
-                <div className="flex flex-row items-center space-x-6">
-                  <div className="flex items-center justify-center w-12 -mx-6">
-                    {currentSong.id === item.id && isPlaying ? (
-                      <MiniWaves isActive={true} />
-                    ) : (
-                      <span className={`${currentSong["id"] === item["id"] ? "text-blue-600 font-semibold" : "text-white"} font-outfit`}>{index + 1}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-row items-center space-x-2">
-                    <img src={item["music-cover"]} className="max-w-10 max-h-10" alt={item["music-name"]} />
-                    <div className="flex flex-col -space-y-1 font-outfit">
-                      <span className={`${currentSong["id"] === item["id"] ? "text-blue-600 font-semibold" : "text-white"}`}>{item["music-name"]}</span>
-                      <span className="text-white text-opacity-80 text-sm">{item["music-author"]}</span>
+          <div className="group w-auto flex items-center justify-center bg-carbon-black rounded-2xl space-x-4 pl-4 mr-4 transition-all duration-300 focus-within:ring-1 focus-within:ring-white hover:brightness-125">
+            <Search className="text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white group-focus-within:text-white" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search Music"
+              placeholder="What to listen to today?"
+              className="bg-carbon-black w-60 p-2 text-white rounded-r-2xl outline-none placeholder:text-neutral-400 font-outfit"
+            />
+          </div>
+        </header>
+
+
+        <div className="w-full h-full flex flex-row p-2 select-none space-x-4">
+          <div className={`w-full h-full flex flex-col bg-gradient-to-b from-blue-400 to-65% to-stone-950 backdrop-blur-md rounded-md overflow-y-auto scroll-bar transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'md:w-[80vw]' : 'w-full'}`}>
+            <div className="w-full flex flex-col p-4">
+              <div className="w-full flex flex-row items-center">
+                <span className="text-[3rem] font-outfit text-white font-extrabold">Your Musics</span>
+                <div className="flex flex-row items-center ml-auto space-x-4">
+
+                  <button
+                    className="group ml-auto bg-black p-2 rounded-full bg-opacity-60 shadow-lg transition-all duration-300 ease-in-out hover:scale-105"
+                    aria-label="Add New Music"
+                    onClick={toggleAddMusicCard}>
+                    <Plus className="w-5 h-5 text-white transition-all duration-500 ease-in-out group-hover:rotate-180 group-hover:scale-105" />
+                  </button>
+
+                </div>
+              </div>
+              <span className="text-lg font-outfit px-1 text-neutral-200">Here's your music library</span>
+            </div>
+
+            <div className="w-full h-60 bg-black bg-opacity-10 space-y-1 p-2">
+              {filteredMusicData.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="w-full h-14 flex flex-row items-center p-4 bg-transparent rounded-sm cursor-pointer hover:bg-white hover:bg-opacity-10"
+                  onClick={() => {
+                    setCurrentSong(item)
+                    setIsPlaying(true)
+                    setWaveVisible(true)
+                  }}
+                >
+                  <div className="flex flex-row items-center space-x-6">
+                    <div className="flex items-center justify-center w-12 -mx-6">
+                      {currentSong.id === item.id && isPlaying ? (
+                        <MiniWaves isActive={true} />
+                      ) : (
+                        <span className={`${currentSong["id"] === item["id"] ? "text-blue-600 font-semibold" : "text-white"} font-outfit`}>{index + 1}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-row items-center space-x-2">
+                      <img src={item["music-cover"]} className="max-w-10 max-h-10" alt={item["music-name"]} />
+                      <div className="flex flex-col -space-y-1 font-outfit">
+                        <span className={`${currentSong["id"] === item["id"] ? "text-blue-600 font-semibold" : "text-white"}`}>{item["music-name"]}</span>
+                        <span className="text-white text-opacity-80 text-sm">{item["music-author"]}</span>
+                      </div>
                     </div>
                   </div>
+                  <span className="font-outfit text-white text-opacity-80 ml-auto">
+                    {item["music-duration"]}
+                  </span>
                 </div>
-                <span className="font-outfit text-white text-opacity-80 ml-auto">
-                  {item["music-duration"]}
-                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className={`fixed md:relative right-0 top-0 h-full md:h-auto w-full md:w-[35vw] bg-carbon-black contrast-125 rounded-lg space-y-4 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 md:flex md:flex-col' : 'translate-x-full opacity-0 md:hidden'} hidden md:flex flex-col`}>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-full flex flex-row items-center p-4">
+                <div className="flex flex-row space-x-4">
+                  <span className="font-outfit text-white font-extrabold">Now Playing</span>
+                  <MiniWaves isActive={true} />
+                </div>
+                <div
+                  className="flex flex-row items-center ml-auto cursor-pointer"
+                  onClick={toggleMusicCard}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </div>
               </div>
-            ))}
+              <div className="flex items-center">
+                <img
+                  src={currentSong["music-cover"]}
+                  className={`md:w-60 md:h-60 lg:w-72 lg:h-72 max-w-80 max-h-80 hover:brightness-110 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-90'}`}
+                  alt={currentSong["music-name"]}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col mx-4">
+              <span className="text-base font-bold md:text-xl text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
+              <span className="text-xs font-bold md:text-base text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
+            </div>
           </div>
         </div>
 
-        <div className={`fixed md:relative right-0 top-0 h-full md:h-auto w-full md:w-[35vw] bg-carbon-black contrast-125 rounded-lg space-y-4 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 md:flex md:flex-col' : 'translate-x-full opacity-0 md:hidden'} hidden md:flex flex-col`}>
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-full flex flex-row items-center p-4">
-              <div className="flex flex-row space-x-4">
-                <span className="font-outfit text-white font-extrabold">Now Playing</span>
-                <MiniWaves isActive={true} />
-              </div>
-              <div
-                className="flex flex-row items-center ml-auto cursor-pointer"
-                onClick={toggleMusicCard}
-              >
-                <X className="w-5 h-5 text-white" />
-              </div>
+        <div className={`transform transition-all duration-300 ease-in-out ${waveVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-8 bg-transparent"
+            width={window.innerWidth}
+            height={32}
+          />
+        </div>
+        <audio
+          ref={audioRef}
+          onEnded={playNext}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setAudioProgress(audioRef.current.currentTime)
+            }
+          }}
+        />
+
+        <footer className="w-full p-4 flex flex-row items-center justify-between bg-black border-t-2 select-none">
+          <div
+            className="flex flex-row items-center mx-4 space-x-4"
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setIsMobilePlayerVisible(true)
+              } else {
+                toggleMusicCard()
+              }
+            }}>
+            <img
+              src={currentSong["music-cover"]}
+              className="max-w-10 max-h-10 md:max-w-14 md:max-h-14 cursor-pointer"
+              alt={currentSong["music-name"]}
+            />
+            <div className="flex flex-col font-outfit w-20 max-w-20">
+              <span className="text-base whitespace-nowrap md:text-lg text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
+              <span className="text-xs whitespace-nowrap md:text-sm text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
             </div>
-            <div className="flex items-center">
-              <img
-                src={currentSong["music-cover"]}
-                className={`md:w-60 md:h-60 lg:w-72 lg:h-72 max-w-80 max-h-80 hover:brightness-110 transform transition-all duration-500 ease-in-out ${isMusicCardVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-90'}`}
-                alt={currentSong["music-name"]}
+          </div>
+
+          <div className="flex flex-col items-center space-y-1">
+            <div className="flex flex-row items-center space-x-3">
+              <button
+                onClick={handleRandom}
+                aria-label="Set Shuffle Music Queue">
+                <Shuffle className={`w-5 h-5 ${isRandom ? "text-blue-500" : 'text-white'} hover:scale-105`} />
+              </button>
+
+              <button
+                onClick={playPrev}
+                aria-label="Previous song">
+                <StepBack className="w-5 h-5 text-white hover:fill-white" />
+              </button>
+
+              <button
+                className="bg-blue-400 p-2 rounded-full transition-all duration-200 hover:bg-blue-900"
+                aria-label={isPlaying ? "Pause" : "Play"}
+                onClick={togglePlayerState}>
+                {!isPlaying ?
+                  <Play className="w-5 h-5 text-white fill-white" /> :
+                  <Pause className="w-5 h-5 text-white fill-white" />
+                }
+              </button>
+
+              <button
+                onClick={playNext}
+                aria-label="Next song">
+                <StepForward className="w-5 h-5 text-white hover:fill-white" />
+              </button>
+
+            </div>
+
+            <div className="hidden md:visible md:flex flex-row items-center justify-center space-x-4">
+              <span className="font-outfit text-white">{formatMusicTime(audioProgress)}</span>
+              <input
+                type="range"
+                min={0}
+                max={audioDuration || 0}
+                value={audioProgress || 0}
+                onChange={handleMusicProgress}
+                className="w-72 h-1 transition-all duration-300 ease-in-out accent-white outline-none border-none hover:accent-blue-400 hover:h-4"
+              />
+              <span className="font-outfit text-white">{formatMusicTime(audioDuration)}</span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex flex-row md:mx-4 items-center space-x-4">
+            <div className="group flex flex-row items-center space-x-2">
+              {volumeProgress >= 0.6 ? (
+                <Volume2 className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
+              ) : volumeProgress > 0 && volumeProgress < 0.6 ? (
+                <Volume1 className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
+              ) : (
+                <VolumeOff className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
+              )}
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volumeProgress}
+                aria-label="Volume control"
+                onChange={handleMusicVolume}
+                className="w-32 h-1 transition-all duration-300 ease-in-out accent-white outline-none border-none hover:accent-blue-400 hover:h-4"
               />
             </div>
           </div>
 
-          <div className="flex flex-col mx-4">
-            <span className="text-base font-bold md:text-xl text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
-            <span className="text-xs font-bold md:text-base text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className={`transform transition-all duration-300 ease-in-out ${waveVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-        <canvas
-          ref={canvasRef}
-          className="w-full h-8 bg-transparent"
-          width={window.innerWidth}
-          height={32}
-        />
-      </div>
-      <audio
-        ref={audioRef}
-        onEnded={playNext}
-        onTimeUpdate={() => {
-          if (audioRef.current) {
-            setAudioProgress(audioRef.current.currentTime)
-          }
-        }}
-      />
-
-      <footer className="w-full p-4 flex flex-row items-center justify-between bg-black border-t-2 select-none">
-        <div
-          className="flex flex-row items-center mx-4 space-x-4"
-          onClick={() => {
-            if (window.innerWidth < 768) {
-              setIsMobilePlayerVisible(true)
-            } else {
-              toggleMusicCard()
-            }
-          }}>
-          <img
-            src={currentSong["music-cover"]}
-            className="max-w-10 max-h-10 md:max-w-14 md:max-h-14 cursor-pointer"
-            alt={currentSong["music-name"]}
-          />
-          <div className="flex flex-col font-outfit w-20 max-w-20">
-            <span className="text-base whitespace-nowrap md:text-lg text-white cursor-pointer hover:underline">{currentSong["music-name"]}</span>
-            <span className="text-xs whitespace-nowrap md:text-sm text-white text-opacity-80 cursor-pointer hover:underline">{currentSong["music-author"]}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center space-y-1">
-          <div className="flex flex-row items-center space-x-3">
-            <button
-              onClick={handleRandom}
-              aria-label="Set Shuffle Music Queue">
-              <Shuffle className={`w-5 h-5 ${isRandom ? "text-blue-500" : 'text-white'} hover:scale-105`} />
-            </button>
-
-            <button
-              onClick={playPrev}
-              aria-label="Previous song">
-              <StepBack className="w-5 h-5 text-white hover:fill-white" />
-            </button>
-
-            <button
-              className="bg-blue-400 p-2 rounded-full transition-all duration-200 hover:bg-blue-900"
-              aria-label={isPlaying ? "Pause" : "Play"}
-              onClick={togglePlayerState}>
-              {!isPlaying ?
-                <Play className="w-5 h-5 text-white fill-white" /> :
-                <Pause className="w-5 h-5 text-white fill-white" />
-              }
-            </button>
-
-            <button
-              onClick={playNext}
-              aria-label="Next song">
-              <StepForward className="w-5 h-5 text-white hover:fill-white" />
-            </button>
-
-          </div>
-
-          <div className="hidden md:visible md:flex flex-row items-center justify-center space-x-4">
-            <span className="font-outfit text-white">{formatMusicTime(audioProgress)}</span>
-            <input
-              type="range"
-              min={0}
-              max={audioDuration || 0}
-              value={audioProgress || 0}
-              onChange={handleMusicProgress}
-              className="w-72 h-1 transition-all duration-300 ease-in-out accent-white outline-none border-none hover:accent-blue-400 hover:h-4"
-            />
-            <span className="font-outfit text-white">{formatMusicTime(audioDuration)}</span>
-          </div>
-        </div>
-
-        <div className="hidden md:flex flex-row md:mx-4 items-center space-x-4">
-          <div className="group flex flex-row items-center space-x-2">
-            {volumeProgress >= 0.6 ? (
-              <Volume2 className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
-            ) : volumeProgress > 0 && volumeProgress < 0.6 ? (
-              <Volume1 className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
-            ) : (
-              <VolumeOff className="w-5 h-5 text-neutral-500 transition-all duration-300 cursor-pointer group-hover:text-white" />
-            )}
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volumeProgress}
-              aria-label="Volume control"
-              onChange={handleMusicVolume}
-              className="w-32 h-1 transition-all duration-300 ease-in-out accent-white outline-none border-none hover:accent-blue-400 hover:h-4"
-            />
-          </div>
-        </div>
-
-      </footer>
-    </main>
+        </footer>
+      </main>
+    </div>
   )
 }

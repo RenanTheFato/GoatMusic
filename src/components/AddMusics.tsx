@@ -16,138 +16,16 @@ export default function AddMusics({ isVisible, onClose, onMusicAdded }: AddMusic
   const coverMusicRef = useRef<HTMLInputElement | null>(null)
   const audioMusicRef = useRef<HTMLInputElement | null>(null)
 
+  const [coverNotification, setCoverNotification] = useState<string | null>(null)
+  const [audioNotification, setAudioNotification] = useState<string | null>(null)
+  const [audioDuration, setAudioDuration] = useState<string>("")
   const [coverMusic, setCoverMusic] = useState<File | null>(null)
   const [audioMusic, setAudioMusic] = useState<File | null>(null)
   const [coverError, setCoverError] = useState<string | null>(null)
   const [audioError, setAudioError] = useState<string | null>(null)
-  const [coverNotification, setCoverNotification] = useState<string | null>(null)
-  const [audioNotification, setAudioNotification] = useState<string | null>(null)
-  const [audioDuration, setAudioDuration] = useState<string>("")
 
   const allowedCoverTypes = ['image/jpeg', 'image/png']
   const allowedAudioTypes = ['audio/mpeg', 'audio/ogg', 'audio/wav']
-
-  function formatDuration(seconds: number): string {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = Math.floor(seconds % 60)
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-  }
-
-  function showCoverNotification(message: string) {
-    setCoverNotification(message)
-    setTimeout(() => setCoverNotification(null), 3000)
-  }
-
-  function validateFile(file: File): boolean {
-    if (!allowedCoverTypes.includes(file.type)) {
-      setCoverError('Please select a valid image file (JPEG or PNG)')
-      showCoverNotification('Please select a valid image file (JPEG or PNG)')
-      return false
-    }
-
-    const maxSize = 5 * 1024 * 1024
-
-    if (file.size > maxSize) {
-      setCoverError('File size must be less than 5MB')
-      showCoverNotification('File size must be less than 5MB')
-      return false
-    }
-
-    return true
-  }
-
-  function handleChangeMusicCover(event: React.ChangeEvent<HTMLInputElement>) {
-    setCoverError(null)
-
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0]
-
-      if (validateFile(file)) {
-        setCoverMusic(file);
-      } else {
-        if (coverMusicRef.current) {
-          coverMusicRef.current.value = ''
-        }
-        setCoverMusic(null)
-      }
-    }
-  }
-
-  function handleChooseMusicCover() {
-    coverMusicRef.current?.click()
-  }
-
-  function handleRemoveMusicCover() {
-    setCoverMusic(null)
-    setCoverError(null)
-    if (coverMusicRef.current) {
-      coverMusicRef.current.value = ''
-    }
-  }
-
-  function showAudioNotification(message: string) {
-    setAudioNotification(message)
-    setTimeout(() => setAudioNotification(null), 3000)
-  }
-
-  function validateAudioFile(file: File): boolean {
-    if (!allowedAudioTypes.includes(file.type)) {
-      setAudioError('Please select a valid image file (MP3, OGG or WAV)')
-      showAudioNotification('Please select a valid image file (MP3, OGG or WAV)')
-      return false
-    }
-
-    return true
-  }
-
-  function handleChangeMusicAudio(event: React.ChangeEvent<HTMLInputElement>) {
-    setAudioError(null)
-
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0]
-
-      if (validateAudioFile(file)) {
-        setAudioMusic(file);
-        setValue('music-audio', file)
-
-        const audioUrl = URL.createObjectURL(file)
-        const audio = new Audio(audioUrl)
-
-        audio.onloadedmetadata = () => {
-          const duration = formatDuration(audio.duration)
-
-          setAudioDuration(duration)
-
-          setValue('music-duration', duration)
-
-          URL.revokeObjectURL(audioUrl)
-        }
-      } else {
-        if (audioMusicRef.current) {
-          audioMusicRef.current.value = ''
-        }
-        setAudioMusic(null)
-        setAudioDuration("")
-        setValue('music-duration', '')
-        setValue('music-audio', null)
-      }
-    }
-  }
-
-  function handleChooseMusicAudio() {
-    audioMusicRef.current?.click()
-  }
-
-  function handleRemoveMusicAudio() {
-    setAudioMusic(null)
-    setAudioError(null)
-    setAudioDuration("")
-    setValue('music-duration', '')
-    setValue('music-audio', null)
-    if (audioMusicRef.current) {
-      audioMusicRef.current.value = ''
-    }
-  }
 
   const addMusicSchema = z.object({
     "music-name": z.string().nonempty("Music name is required").max(255, "Music name must be less than 255 characters"),
@@ -208,7 +86,130 @@ export default function AddMusics({ isVisible, onClose, onMusicAdded }: AddMusic
       console.error('Error uploading music:', error)
     }
   }
+
+  function validateFile(file: File): boolean {
+    if (!allowedCoverTypes.includes(file.type)) {
+      setCoverError('Please select a valid image file (JPEG or PNG)')
+      showCoverNotification('Please select a valid image file (JPEG or PNG)')
+      return false
+    }
+
+    const maxSize = 5 * 1024 * 1024
+
+    if (file.size > maxSize) {
+      setCoverError('File size must be less than 5MB')
+      showCoverNotification('File size must be less than 5MB')
+      return false
+    }
+
+    return true
+  }
+
   
+  function handleChangeMusicAudio(event: React.ChangeEvent<HTMLInputElement>) {
+    setAudioError(null)
+
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0]
+
+      if (validateAudioFile(file)) {
+        setAudioMusic(file);
+        setValue('music-audio', file)
+
+        const audioUrl = URL.createObjectURL(file)
+        const audio = new Audio(audioUrl)
+
+        audio.onloadedmetadata = () => {
+          const duration = formatDuration(audio.duration)
+
+          setAudioDuration(duration)
+
+          setValue('music-duration', duration)
+
+          URL.revokeObjectURL(audioUrl)
+        }
+      } else {
+        if (audioMusicRef.current) {
+          audioMusicRef.current.value = ''
+        }
+        setAudioMusic(null)
+        setAudioDuration("")
+        setValue('music-duration', '')
+        setValue('music-audio', null)
+      }
+    }
+  }
+
+  function validateAudioFile(file: File): boolean {
+    if (!allowedAudioTypes.includes(file.type)) {
+      setAudioError('Please select a valid image file (MP3, OGG or WAV)')
+      showAudioNotification('Please select a valid image file (MP3, OGG or WAV)')
+      return false
+    }
+
+    return true
+  }
+
+  function handleChangeMusicCover(event: React.ChangeEvent<HTMLInputElement>) {
+    setCoverError(null)
+
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0]
+
+      if (validateFile(file)) {
+        setCoverMusic(file);
+      } else {
+        if (coverMusicRef.current) {
+          coverMusicRef.current.value = ''
+        }
+        setCoverMusic(null)
+      }
+    }
+  }
+  
+  function handleRemoveMusicAudio() {
+    setAudioMusic(null)
+    setAudioError(null)
+    setAudioDuration("")
+    setValue('music-duration', '')
+    setValue('music-audio', null)
+    if (audioMusicRef.current) {
+      audioMusicRef.current.value = ''
+    }
+  }
+
+  function handleRemoveMusicCover() {
+    setCoverMusic(null)
+    setCoverError(null)
+    if (coverMusicRef.current) {
+      coverMusicRef.current.value = ''
+    }
+  }
+
+  function formatDuration(seconds: number): string {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = Math.floor(seconds % 60)
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+  
+  function showCoverNotification(message: string) {
+    setCoverNotification(message)
+    setTimeout(() => setCoverNotification(null), 3000)
+  }
+
+  function showAudioNotification(message: string) {
+    setAudioNotification(message)
+    setTimeout(() => setAudioNotification(null), 3000)
+  }
+
+  function handleChooseMusicCover() {
+    coverMusicRef.current?.click()
+  }
+
+  function handleChooseMusicAudio() {
+    audioMusicRef.current?.click()
+  }
+
   return (
     <div className={`fixed inset-0 z-50 bg-carbon-black contrast-125 transform transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
       {coverNotification && (
