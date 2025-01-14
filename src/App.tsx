@@ -342,7 +342,7 @@ export default function App() {
         <header className="w-full flex flex-row items-center justify-between h-16 shadow-md shadow-carbon-black">
           <div className="flex flex-row space-x-4 items-center justify-center m-4">
             <Music className="w-10 h-10 text-white" />
-            <span className="text-white font-outfit text-3xl font-extrabold">G O A T</span>
+            <span className="text-white font-outfit text-3xl font-extrabold text-nowrap">G O A T</span>
           </div>
 
           <div className="group w-auto flex items-center justify-center bg-carbon-black rounded-2xl space-x-4 pl-4 mr-4 transition-all duration-300 focus-within:ring-1 focus-within:ring-white hover:brightness-125">

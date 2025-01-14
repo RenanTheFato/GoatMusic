@@ -1,4 +1,11 @@
-# Goat Music Server
+<div style='display: flex;  flex-direction: row; align-items: center; justify-content: center; gap: 16px'>
+<img src="public/icon.svg" width='80px' height='auto'>
+
+<h1>Goat Music</h1>
+
+</div>
+
+---
 
 <div>
 <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
@@ -10,16 +17,43 @@
 
 ## 📋 About The Project
 
-A simple server that integrates receiving and storing files from the **[Goat Music](https://github.com/RenanTheFato/GoatMusic)** project with Typescript and Fastify.
+Goat Music is a music streaming web application developed with React, TypeScript and Tailwind CSS. The project offers a modern and responsive interface, connecting the frontend with a backend that stores and manages music files and images.
 
+The application is designed to be simple and efficient, with a focus on a fluid user experience. It allows you to upload files, such as songs and album covers, and provides control over music playback, as well as generating dynamic visualizations of sound waves.
+
+### 👁️ Preview
+
+---
+
+<div style='display: flex;  flex-direction: column;   align-items: center; justify-content: center;'>
+
+<div style='display: flex;  flex-direction: column;   align-items: center; gap: 17px'>
+
+<img src='public/pc-interface.png' width='600px' height='auto'>
+<img src='public/form-presentation.png' width='600px' height='auto'>
+
+</div>
+
+<div style='display: flex;  flex-direction: row; align-items: center; justify-content: center; gap: 6px'>
+
+<img src='public/mobile-interface.png' width='300px' height='450px'>
+<img src='public/mobile-player.png' width='300px' height='450px'>
+
+</div>
+
+</div>
 
 ## 🚀 Features
 
+- Clean Interface
+- Responsive Layout
+- Sound Waves According to the Rhythm of the Music
 - File upload and storage:
   - Images (e.g., album covers)
-  - Music files (e.g., songs, audio recordings)
-- Fast and efficient handling of HTTP requests
-- Scalable structure for future enhancements
+  - Music Files (e.g., songs, audio recordings)
+- Music Filter
+- Music Randomizer
+- Music Volume Controller
 
 ## 🛠️ Dependency
 
@@ -54,12 +88,11 @@ npm run build
 
 # Production Preview
 npm run preview
-
 ```
 ## 📁 Project Structure
 
 ```
-GoatMusicServer/
+GoatMusic/
 ├──public/
 |    └── icon.svg
 ├── src/
