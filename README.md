@@ -1,11 +1,11 @@
-<div style='display: flex;  flex-direction: row; align-items: center; justify-content: center; gap: 16px'>
-<img src="public/icon.svg" width='80px' height='auto'>
+<div align="center">
 
-<h1>Goat Music</h1>
-
-</div>
+| <img src="public/icon.svg" width="80" alt="Goat Music Icon" align="center"> | <h1 align="center">Goat Music</h1> |
+|----------------------------------------------------------------------------|:---------------------------------:|
 
 ---
+
+</div>
 
 <div>
 <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
@@ -25,19 +25,19 @@ The application is designed to be simple and efficient, with a focus on a fluid 
 
 ---
 
-<div style='display: flex;  flex-direction: column;   align-items: center; justify-content: center;'>
+<div style='display: flex;  flex-direction: column; align-items: center; justify-content: center;' align='center'>
 
-<div style='display: flex;  flex-direction: column;   align-items: center; gap: 17px'>
+<div style='display: flex;  flex-direction: column; align-items: center; gap: 17px'>
 
-<img src='public/pc-interface.png' width='600px' height='auto'>
-<img src='public/form-presentation.png' width='600px' height='auto'>
+<img src='public/pc-interface.png' width='600px' height='auto' > &nbsp;
+<img src='public/form-presentation.png' width='600px' height='auto'> &nbsp;
 
 </div>
 
-<div style='display: flex;  flex-direction: row; align-items: center; justify-content: center; gap: 6px'>
+<div style='display: flex;  flex-direction: row; align-items: center; justify-content: center; gap: 6px' align='center'>
 
-<img src='public/mobile-interface.png' width='300px' height='450px'>
-<img src='public/mobile-player.png' width='300px' height='450px'>
+<img src='public/mobile-interface.png' width='300px' height='450px'> &nbsp;
+<img src='public/mobile-player.png' width='300px' height='450px'> &nbsp;
 
 </div>
 
